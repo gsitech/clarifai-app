@@ -1,10 +1,18 @@
 from clarifai.rest import ClarifaiApp
-import os, requests, time
+import os, requests, time, sys
 from PIL import Image
 import matplotlib.pyplot as plt
 
 CLARIFAI_API_KEY = 'a28786feb1b64f4193ece897e65d4fcb'
 PATH = 'C:\\Users\\VV\\Documents\\My Bluetooth\\Clarifai'
+
+if len(sys.argv) < 2: 
+    if len(CLARIFAI_API_KEY)==0 :
+        print('Please provide a key')
+        exit(1)
+    elif len(PATH)==0:
+        print('Please provide a PATH to the folder containing the query image')
+        exit(1)
 
 app = ClarifaiApp(api_key= CLARIFAI_API_KEY)
 
