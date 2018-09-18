@@ -59,6 +59,10 @@ else:
     elif len(PATH)==0:
         print('Please provide a PATH to the folder containing the query image')
         exit(1)
+        
+else:
+    CLARIFAI_API_KEY=sys.argv[1]
+    PATH = sys.argv[2]
 
 app = ClarifaiApp(api_key= CLARIFAI_API_KEY)
 img_num = 0
