@@ -59,16 +59,12 @@ else:
     elif len(PATH)==0:
         print('Please provide a PATH to the folder containing the query image')
         exit(1)
-        
-else:
-    CLARIFAI_API_KEY=sys.argv[1]
-    PATH = sys.argv[2]
 
 app = ClarifaiApp(api_key= CLARIFAI_API_KEY)
 img_num = 0
 while 1:
     if len(os.listdir(PATH)) > img_num and  check_if_image(os.path.join(PATH,os.listdir(PATH)[img_num])):
-        fig=plt.figure(figsize=(8, 8))
+        fig=plt.figure(figsize=(11, 7))
         img = os.listdir(PATH)[img_num]
         response = app.inputs.search_by_image(filename = os.path.join(PATH,img))
         counter = 0
@@ -91,7 +87,7 @@ while 1:
                 cnt+=1
         
         add_image_to_subplot(os.path.join(PATH,img), COLUMNS/2 +1, 'Query Image', fig)
-
+        plt.savefig("img"+str(img_num)+".jpg", bbox_inches='tight')
         plt.show()
         for i in range (10):
             os.remove(os.path.join(os.getcwd(),'pic'+ str(i+1)+'.jpg'))
