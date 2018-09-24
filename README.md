@@ -3,7 +3,7 @@ GSI Technology Repository Blog For The Clarifai App
 
 This is an application to perform visual search using Clarifai's API. 
 
-![Similarity Search](shashankiyer.github.com/gsitech/clarifai-app/images/cover_page.png)
+![](images/cover_page.png)
 
 Being by installing the Clarifai Python package:
 pip install clarifai
@@ -22,4 +22,4 @@ python Search.py <api_key> <path_to_folder_containing_images>
 
 A user may also enter these into the script manually for convenience of reuse.
 
-For more information visit my blog
+For more information visit my [blog](https://medium.com/gsi-technology/getting-started-with-clarifais-sdk-c642be7c45eb)
