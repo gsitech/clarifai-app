@@ -3,6 +3,11 @@ from clarifai.rest import Image as ClImage
 from PIL import Image
 import requests, argparse
 
+LABELS_DICT = {}
+LABEL_CTR = 0
+
+#CLARIFAI_API_KEY = 'a28786feb1b64f4193ece897e65d4fcb'
+
 def url_download_to_image(file, url):
     '''Downloads a file from the url and correctly converts it to an image.
     
@@ -39,7 +44,21 @@ def _1024_embeddings(img, file, model):
     '''Obtains embeddings and writes them to a file handle
     '''
     f = model.predict([img])
-    file.write(str(f['outputs'][0]['data']['embeddings'][0]['vector']) + '\n')
+    file.write(str(f['outputs'][0]['data']['embeddings'][0]['vector'])[1:-1] + '\n')
+
+def get_labels(img, file, model):
+    '''Obtains labels and writes them to a file handle
+    '''
+    global LABEL_CTR, LABELS_DICT
+    f = model.predict([img])
+    key = f['outputs'][0]['data']['concepts'][0]['name']
+    val = 0
+    if key not in LABELS_DICT.keys():
+        LABELS_DICT[key] = LABEL_CTR
+        LABEL_CTR+=1
+
+    file.write(str(LABELS_DICT[key]) + '\n')
+
 
 def query_CLARIFAI(CLARIFAI_API_KEY, cmd='2', query_image = None):
     '''Queries Clarifai's API to obtain embeddings of images
@@ -49,7 +68,9 @@ def query_CLARIFAI(CLARIFAI_API_KEY, cmd='2', query_image = None):
 
     counter = 0
     img_num+=1
-    model = app.models.get('general-v1.3', model_type='embed')
+    model_emb = app.models.get('general-v1.3', model_type='embed')
+    model_lab = app.models.get('general-v1.3')
+
     func_dict = {'1':download_images, '2': skip_download_images}
     
     if __name__ == '__main__':
@@ -62,27 +83,27 @@ def query_CLARIFAI(CLARIFAI_API_KEY, cmd='2', query_image = None):
         if cmd == '3':
             query_image = input('Enter the name of your query image')    
 
-    ret = 0
-    with open('embeddings.txt', 'w') as file:
+    with open('embeddings.txt', 'w') as emb, open('labels.txt', 'w') as lab:
 
         if cmd == '1' or cmd == '2':
             response = app.inputs.get_all()
             counter = 0
             for item in response:
                 counter+=1
-                print(str(counter) + ") URL: " + item.url)
+                print('Processing image ' + str(counter))
                 func_dict[cmd](counter, item.url)
-                _1024_embeddings(item, file, model)
-                if counter == 4:
-                    break
+                _1024_embeddings(item, emb, model_emb)
+                get_labels(item, lab, model_lab)
+                #if counter == 5:
+                #    break
 
         elif query_image!=None:
             check_if_image(query_image)
-            _1024_embeddings(ClImage(filename= query_image), file, model)
+            _1024_embeddings(ClImage(filename= query_image), emb, model_emb)
+            get_labels(item, lab, model_lab)
         
-        ret = file
 
-    return ret
+    return emb, lab
 
 if __name__ == '__main__':
 
