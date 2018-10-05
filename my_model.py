@@ -5,6 +5,7 @@ from model.input_fn import test_input_fn
 from model.fully_connected import hashing_model
 from model.triplet_loss import batch_all_triplet_loss
 from model.triplet_loss import batch_hard_triplet_loss
+from model.triplet_loss import _pairwise_distances as dist
 import argparse, os, time
 
 def sup(params, mode):
@@ -50,6 +51,14 @@ def model_fn(params, mode):
         return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops)
     '''
 
+    #Compute training accuracy
+    og_emb = dist(x)
+    tr_emb = dist(embeddings)
+    difference = tf.subtract(og_emb,tr_emb)
+    difference = tf.maximum(difference, -1.0 * difference)
+    accuracy = tf.subtract(1.0, difference)
+    accuracy = tf.reduce_mean(accuracy)
+
     # Summaries for training
     tf.summary.scalar('loss', loss)
     if params.triplet_strategy == "batch_all":
@@ -57,22 +66,22 @@ def model_fn(params, mode):
 
     # Define training step that minimizes the loss with the Adam optimizer
     optimizer = tf.train.AdamOptimizer(params.learning_rate)
-    init = tf.global_variables_initializer()
+    
     global_step = tf.train.get_global_step()
     
     train_op = optimizer.minimize(loss, global_step=global_step)
-
+    init = tf.global_variables_initializer()
     sess = tf.Session()
     sess.run(init)
 
     if mode == 'train':
-        return x, labels, embeddings, sess, train_op#, accuracy
+        return x, embeddings, labels, sess, train_op, accuracy, loss
     elif mode == 'test':
-        return x, labels, embeddings, sess#, accuracy
+        return x, embeddings, labels, sess#, accuracy
 
 
 def train(params):
-    x, labels, _, sess, train_op = model_fn(params, mode='train')
+    x, _, labels, sess, train_op, accuracy, loss = model_fn(params, mode='train')
 
     xdata, labeldata = train_input_fn()
 
@@ -86,12 +95,11 @@ def train(params):
             current_batch_x_train = xdata[k:k+params.batch_size]
             current_batch_label_train = labeldata[k:k+params.batch_size]
 
-            _= sess.run(train_op,
-                    {x: current_batch_x_train, labels: current_batch_label_train})
+            _, acc, lss= sess.run([train_op, accuracy, loss],
+                            feed_dict = {x: current_batch_x_train, labels: current_batch_label_train})
 
-    
-
-
+        print("Training accuracy= ", acc)
+        print("Training loss= ", lss)
     train_time=time.time() - start_time
     
     saver= tf.train.Saver()
