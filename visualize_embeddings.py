@@ -49,8 +49,7 @@ if __name__ == '__main__':
     tf.logging.info("Predicting")
     predictions = estimator.predict(lambda: test_input_fn())
     '''
-    embeddings, sess = sup(params, 'test')
-    #tf.reset_default_graph()
+    embeddings, _ = sup(params, 'test')
     '''
     # TODO (@omoindrot): remove the hard-coded 10000
     embeddings = np.zeros((10000, params.embedding_size))
@@ -60,22 +59,22 @@ if __name__ == '__main__':
     tf.logging.info("Embeddings shape: {}".format(embeddings.shape))
 
     # Visualize test embeddings
-    embedding_var = embeddings.tolist()
+    embedding_var = tf.Variable(embeddings.tolist(), name = 'embedding_var')
     _, labels = test_input_fn()
     #o = tf.nn.embedding_lookup(embeddings_var, labels)
 
-    eval_dir = os.path.join(args.model_dir, "eval")
+    eval_dir = os.path.join(args.model_dir, 'eval')
     
     config = projector.ProjectorConfig()
     embedding = config.embeddings.add()
-    embedding.tensor_name = 'embeddings_var'
+    embedding.tensor_name = 'embedding_var'
     
     # Specify where you find the sprite (we will create this later)
     # Copy the embedding sprite image to the eval directory
     
-    shutil.copy2(args.sprite_filename, eval_dir)
-    embedding.sprite.image_path = pathlib.Path(args.sprite_filename).name
-    embedding.sprite.single_image_dim.extend([28, 28])
+    #shutil.copy2(args.sprite_filename, eval_dir)
+    #embedding.sprite.image_path = pathlib.Path(args.sprite_filename).name
+    #embedding.sprite.single_image_dim.extend([50, 50])
     
     '''
     with tf.Session() as sess:
@@ -98,15 +97,14 @@ if __name__ == '__main__':
     # Save the metadata file needed for Tensorboard projector
     metadata_filename = "clarifai_metadata.tsv"
     with open(os.path.join(eval_dir, metadata_filename), 'w') as f:
-        for i in range(len(labels)):
-            c = labels[i]
+        for c in labels:
             f.write('{}\n'.format(c))
     embedding.metadata_path = metadata_filename
     
     # Say that you want to visualise the embeddings
     projector.visualize_embeddings(tf.summary.FileWriter(eval_dir), config)
-    e_r = tf.Variable(embedding_var, name = 'e_r')
-    #with tf.Session() as ses:
-    sav = tf.train.Saver()
-    sess.run(e_r.initializer)
-    sav.save(sess, os.path.join(eval_dir, "embeddings.ckpt"))
+    #e_r = tf.Variable(initial_value = embedding_var, dtype=tf.float64, name = 'e_r')
+    with tf.Session() as ses:
+        sav = tf.train.Saver([embedding_var])
+        ses.run(embedding_var.initializer)
+        sav.save(ses, os.path.join(eval_dir, "embeddings.ckpt"), 1)

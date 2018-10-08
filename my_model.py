@@ -65,23 +65,23 @@ def model_fn(params, mode):
         tf.summary.scalar('fraction_positive_triplets', fraction)
 
     # Define training step that minimizes the loss with the Adam optimizer
-    optimizer = tf.train.AdamOptimizer(params.learning_rate)
+    optimizer = tf.train.GradientDescentOptimizer(params.learning_rate)
     
     global_step = tf.train.get_global_step()
     
     train_op = optimizer.minimize(loss, global_step=global_step)
-    init = tf.global_variables_initializer()
-    sess = tf.Session()
-    sess.run(init)
 
     if mode == 'train':
-        return x, embeddings, labels, sess, train_op, accuracy, loss
+        init = tf.global_variables_initializer()
+        sess = tf.Session()
+        sess.run(init)
+        return x, labels, sess, train_op, accuracy, loss
     elif mode == 'test':
-        return x, embeddings, labels, sess#, accuracy
+        return x, embeddings, labels#, accuracy
 
 
 def train(params):
-    x, _, labels, sess, train_op, accuracy, loss = model_fn(params, mode='train')
+    x, labels, sess, train_op, accuracy, loss = model_fn(params, mode='train')
 
     xdata, labeldata = train_input_fn()
 
@@ -108,15 +108,16 @@ def train(params):
     print("Total training time= ", train_time, "seconds")
 
 def test(params):
-    x, labels, embeddings, sess = model_fn(params, mode = 'test')
+    x, embeddings, labels = model_fn(params, mode = 'test')
 
     xdata, labeldata = test_input_fn()
     
+    sess = tf.Session()
     tf.train.Saver().restore(sess , os.path.join(os.getcwd(), params.model_file))
     print ("Model restored!")
     #start_time=time.time()
     out= sess.run(embeddings, feed_dict={x:xdata, labels: labeldata})
-    
+
     return out, sess
 
 
