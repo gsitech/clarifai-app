@@ -11,7 +11,7 @@ def train_input_fn():
         params: (Params) contains hyperparameters of the model (ex: `params.num_epochs`)
     """
 
-    with open('model\\embeddings.txt', 'r') as emb, open('model\\labels.txt', 'r') as lab:
+    with open('model/embeddings.txt', 'r') as emb, open('model/labels.txt', 'r') as lab:
         x=[]
         y=[]
         for line in emb:
@@ -35,7 +35,7 @@ def test_input_fn():
     """
     print("Test data generation")
 
-    with open('model\\embeddings.txt', 'r') as emb, open('model\\labels.txt', 'r') as lab:
+    with open('model/embeddings.txt', 'r') as emb, open('model/labels.txt', 'r') as lab:
         x=[]
         y=[]
         for line in emb:

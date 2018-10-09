@@ -1,10 +1,11 @@
 import tensorflow as tf
+import numpy as np
 import os, math
 
 #Prevents the program from printing TF compile warnings to the terminal
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
-MODEL_FILE = 'model\\model_file.txt'
+MODEL_FILE = 'model/model_file.txt'
 def hashing_model():
     '''Creates a NN to convert a vector of
         1024 floats to a vector of CODE_SIZE many bits
@@ -43,8 +44,8 @@ def __weights_biases(index, prev_features, features):
     index_w = 'W'+str(index)
     index_b = 'b'+str(index)
 
-    W = tf.get_variable(index_w, [prev_features, features], dtype=tf.float32 ,initializer= tf.contrib.layers.xavier_initializer())
-    b = tf.get_variable(index_b, [features], dtype=tf.float32, initializer= tf.contrib.layers.xavier_initializer())
+    W = tf.get_variable(index_w, [prev_features, features], dtype=tf.float32 ,initializer= tf.random_uniform_initializer)
+    b = tf.get_variable(index_b, [features], dtype=tf.float32, initializer= tf.random_uniform_initializer)
     return W, b
 
 
