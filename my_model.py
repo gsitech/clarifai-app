@@ -52,17 +52,12 @@ def model_fn(params, mode):
     '''
 
     #Compute training accuracy
-
-    og_emb_dist = tf.add((10*tf.eye(tf.shape(x)[0], dtype = tf.float32)), dist(x, squared=True))
-    tr_emb_dist = tf.add((10*tf.eye(tf.shape(x)[0], dtype = tf.float32)), dist(embeddings, squared=True))
-    
-    og_emb_nn = tf.argmin(og_emb_dist, axis = 0)
-    tr_emb_nn = tf.argmin(tr_emb_dist, axis = 0)
-    
-    accuracy = tf.equal(og_emb_nn, tr_emb_nn)
-    accuracy = tf.cast(accuracy, dtype = tf.float32)
+    og_emb = dist(x)
+    tr_emb = dist(embeddings)
+    difference = tf.subtract(og_emb,tr_emb)
+    difference = tf.maximum(difference, -1.0 * difference)
+    accuracy = tf.subtract(1.0, difference)
     accuracy = tf.reduce_mean(accuracy)
-    tf.summary.scalar('accuracy', accuracy)
 
     # Summaries for training
     tf.summary.scalar('loss', loss)
@@ -79,46 +74,32 @@ def model_fn(params, mode):
     if mode == 'train':
         init = tf.global_variables_initializer()
         sess = tf.Session()
-        merged = tf.summary.merge_all()
-        train_writer = tf.summary.FileWriter(os.getcwd() + '/train_writer',
-                                      sess.graph)
         sess.run(init)
-
-        return x, labels, sess, train_op, accuracy, loss, merged, train_writer
+        return x, labels, sess, train_op, accuracy, loss
     elif mode == 'test':
         return x, embeddings, labels#, accuracy
 
 
 def train(params):
-    x, labels, sess, train_op, accuracy, loss, merged, train_writer = model_fn(params, mode='train')
+    x, labels, sess, train_op, accuracy, loss = model_fn(params, mode='train')
 
     xdata, labeldata = train_input_fn()
 
     print('Training begins')
     start_time=time.time()
-    jj=1
 
     for j in range (params.num_epochs):
         
         print("EPOCH NUMBER: ", j+1)
-        avg_acc = 0
         for k in range(0, len(xdata), params.batch_size):
             current_batch_x_train = xdata[k:k+params.batch_size]
             current_batch_label_train = labeldata[k:k+params.batch_size]
-            
-            _, acc, lss, merg= sess.run([train_op, accuracy, loss, merged],
+
+            _, acc, lss= sess.run([train_op, accuracy, loss],
                             feed_dict = {x: current_batch_x_train, labels: current_batch_label_train})
 
-            avg_acc+=acc
-            #for i in range (len(o)):
-            #    print('o'+ str(i),o[i])
-            #    print('t'+ str(i),t[i])
-            #break
-            print("Batch Accuracy", acc)
-        train_writer.add_summary(merg, j+1)
-        print("Average accuracy= ", avg_acc * params.batch_size/len(xdata))
+        print("Training accuracy= ", acc)
         print("Training loss= ", lss)
-        break
     train_time=time.time() - start_time
     
     saver= tf.train.Saver()
@@ -141,7 +122,7 @@ def test(params):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model_dir', default='experiments/base_model',
+parser.add_argument('--model_dir', default='experiments\\base_model',
                     help="Experiment directory containing params.json")
 parser.add_argument('mode', default='test',
                     help="train/test")
@@ -158,3 +139,21 @@ if __name__ == '__main__':
     params = Params(json_path)
 
     sup(params, args.mode)
+    '''
+    # Define the model
+    tf.logging.info("Creating the model...")
+    config = tf.estimator.RunConfig(tf_random_seed=230,
+                                    model_dir=args.model_dir,
+                                    save_summary_steps=params.save_summary_steps)
+    estimator = tf.estimator.Estimator(model_fn, params=params, config=config)
+
+    # Train the model
+    tf.logging.info("Starting training for {} epoch(s).".format(params.num_epochs))
+    estimator.train(lambda: train_input_fn(args.data_dir, params))
+
+    # Evaluate the model on the test set
+    tf.logging.info("Evaluation on test set.")
+    res = estimator.evaluate(lambda: test_input_fn(args.data_dir, params))
+    for key in res:
+        print("{}: {}".format(key, res[key]))
+    '''
