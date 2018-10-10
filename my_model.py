@@ -27,6 +27,8 @@ def model_fn(params, mode):
 
     labels = tf.placeholder(tf.int64, [None, 1], 'labels')
 
+    tf.summary.histogram('Distances', dist(embeddings))
+
     # Define triplet loss
     if params.triplet_strategy == "batch_all":
         loss, fraction = batch_all_triplet_loss(labels, embeddings, margin=params.margin,
@@ -64,6 +66,12 @@ def model_fn(params, mode):
     accuracy = tf.reduce_mean(accuracy)
     tf.summary.scalar('accuracy', accuracy)
 
+    #Loss and accuracy for the enitre dataset
+    ls = loss
+    tf.summary.scalar('Training Loss on the entire dataset', ls)
+    ac = accuracy
+    tf.summary.scalar('Training Accuracy on the entire dataset', ac)
+
     # Summaries for training
     tf.summary.scalar('loss', loss)
     if params.triplet_strategy == "batch_all":
@@ -73,27 +81,27 @@ def model_fn(params, mode):
     optimizer = tf.train.GradientDescentOptimizer(params.learning_rate)
     
     #global_step = tf.train.get_global_step()
-    gst = tf.train.create_global_step()#graph=sess.graph)
+    gst = tf.train.create_global_step()
     train_op = optimizer.minimize(loss, global_step=gst)
-    #global_step_tensor = tf.Variable(global_step, trainable=False, name='global_step')
+    
 
     if mode == 'train':
         init = tf.global_variables_initializer()
         sess = tf.Session()
         
         merged = tf.summary.merge_all()
+        
         train_writer = tf.summary.FileWriter(os.getcwd() + '/train_writer',
                                       sess.graph)
         sess.run(init)
-        #gst = tf.train.create_global_step(graph=sess.graph)
-        #sess.run(gst.initializer)
-        return x, labels, sess, train_op, accuracy, loss, merged, train_writer, gst
+        
+        return x, labels, sess, train_op, accuracy, loss, merged, train_writer, gst, ls, ac
     elif mode == 'test':
         return x, embeddings, labels#, accuracy
 
 
 def train(params):
-    x, labels, sess, train_op, accuracy, loss, merged, train_writer, gst = model_fn(params, mode='train')
+    x, labels, sess, train_op, accuracy, loss, merged, train_writer, gst, ls, ac = model_fn(params, mode='train')
 
     xdata, labeldata = train_input_fn()
 
@@ -103,7 +111,8 @@ def train(params):
     for j in range (params.num_epochs):
         
         print("EPOCH NUMBER: ", j+1)
-        avg_acc = 0
+        avg_acc=0
+        avg_lss=0
         for k in range(0, len(xdata), params.batch_size):
             current_batch_x_train = xdata[k:k+params.batch_size]
             current_batch_label_train = labeldata[k:k+params.batch_size]
@@ -112,17 +121,20 @@ def train(params):
                             feed_dict = {x: current_batch_x_train, labels: current_batch_label_train})
 
             avg_acc+=acc
-            #for i in range (len(o)):
-            #    print('o'+ str(i),o[i])
-            #    print('t'+ str(i),t[i])
-            #break
-            print("Batch Accuracy", acc)
-            print(gg)
+            avg_lss+=lss    
+            #print("Mini-batch training Accuracy", acc)
+            #print("Mini-batch training Loss", lss)
+
+            acc, lss, merg, gg = sess.run([ac, ls, merged, gst], 
+                            feed_dict={ x: xdata, labels: labeldata })
+            #print("Training Accuracy over the entire set", acc)
+            #print("Training Loss over the entire set", lss)
 
         train_writer.add_summary(merg, global_step=gg)
-        print("Average accuracy= ", avg_acc * params.batch_size/len(xdata))
-        print("Training loss= ", lss)
-        #break
+        #print("Average Training Accuracy= ", avg_acc * params.batch_size/len(xdata))
+        #print("Average Training Loss= ", avg_lss * params.batch_size/len(xdata))
+        #print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+        
     train_time=time.time() - start_time
     
     saver= tf.train.Saver()
