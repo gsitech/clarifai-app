@@ -72,25 +72,28 @@ def model_fn(params, mode):
     # Define training step that minimizes the loss with the Adam optimizer
     optimizer = tf.train.GradientDescentOptimizer(params.learning_rate)
     
-    global_step = tf.train.get_global_step()
-    
-    train_op = optimizer.minimize(loss, global_step=global_step)
+    #global_step = tf.train.get_global_step()
+    gst = tf.train.create_global_step()#graph=sess.graph)
+    train_op = optimizer.minimize(loss, global_step=gst)
+    #global_step_tensor = tf.Variable(global_step, trainable=False, name='global_step')
 
     if mode == 'train':
         init = tf.global_variables_initializer()
         sess = tf.Session()
+        
         merged = tf.summary.merge_all()
         train_writer = tf.summary.FileWriter(os.getcwd() + '/train_writer',
                                       sess.graph)
         sess.run(init)
-
-        return x, labels, sess, train_op, accuracy, loss, merged, train_writer
+        #gst = tf.train.create_global_step(graph=sess.graph)
+        #sess.run(gst.initializer)
+        return x, labels, sess, train_op, accuracy, loss, merged, train_writer, gst
     elif mode == 'test':
         return x, embeddings, labels#, accuracy
 
 
 def train(params):
-    x, labels, sess, train_op, accuracy, loss, merged, train_writer = model_fn(params, mode='train')
+    x, labels, sess, train_op, accuracy, loss, merged, train_writer, gst = model_fn(params, mode='train')
 
     xdata, labeldata = train_input_fn()
 
@@ -105,7 +108,7 @@ def train(params):
             current_batch_x_train = xdata[k:k+params.batch_size]
             current_batch_label_train = labeldata[k:k+params.batch_size]
             
-            _, acc, lss, merg= sess.run([train_op, accuracy, loss, merged],
+            _, acc, lss, merg, gg= sess.run([train_op, accuracy, loss, merged, gst],
                             feed_dict = {x: current_batch_x_train, labels: current_batch_label_train})
 
             avg_acc+=acc
@@ -114,14 +117,16 @@ def train(params):
             #    print('t'+ str(i),t[i])
             #break
             print("Batch Accuracy", acc)
-        train_writer.add_summary(merg, j+1)
+            print(gg)
+
+        train_writer.add_summary(merg, global_step=gg)
         print("Average accuracy= ", avg_acc * params.batch_size/len(xdata))
         print("Training loss= ", lss)
-        break
+        #break
     train_time=time.time() - start_time
     
     saver= tf.train.Saver()
-    saver.save(sess , os.path.join(os.getcwd(), params.model_file))
+    saver.save(sess , os.path.join(os.getcwd(), params.model_file), global_step=gg)
     
     print("Total training time= ", train_time, "seconds")
 

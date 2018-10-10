@@ -4,7 +4,7 @@ import os, math
 #Prevents the program from printing TF compile warnings to the terminal
 os.environ['TF_CPP_MIN_LOG_LEVEL']='2'
 
-MODEL_FILE = 'model\\model_file.txt'
+MODEL_FILE = 'model/model_file.txt'
 def hashing_model():
     '''Creates a NN to convert a vector of
         1024 floats to a vector of CODE_SIZE many bits
