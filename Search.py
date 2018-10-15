@@ -15,7 +15,7 @@ def check_if_image(img_path):
        :return- True if valid image
     '''
     try:
-        Image.open(img_path)
+        Image.open(img_path, 'r')
         return True
     except IOError:
         print(img_path, "is not a valid image")
