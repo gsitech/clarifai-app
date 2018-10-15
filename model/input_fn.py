@@ -1,14 +1,14 @@
 '''Functions to import data for training and testing'''
 
 #TODO
-# Modify the file paths these functions once you have 
+# Modify the file paths of these functions once you have 
 # enough data to train and test separately
 
 def train_input_fn():
     """Training data supplier.
     """
 
-    with open('utilities/embeddings.txt', 'r') as emb, open('utilities/labels.txt', 'r') as lab:
+    with open('../data/embeddings.txt', 'r') as emb, open('../data/labels.txt', 'r') as lab:
         x=[]
         y=[]
         for line in emb:
@@ -27,7 +27,7 @@ def test_input_fn():
     """Test input function.
     """
 
-    with open('utilities/embeddings.txt', 'r') as emb, open('utilities/labels.txt', 'r') as lab:
+    with open('../data/embeddings.txt', 'r') as emb, open('../data/labels.txt', 'r') as lab:
         x=[]
         y=[]
         for line in emb:
@@ -45,7 +45,7 @@ def get_labels_as_strings():
     """Gets the string values of the labels
     """
     y=[]
-    with open('utilities/labels_strings.txt', 'r') as lab:
+    with open('../data/labels_strings.txt', 'r') as lab:
         for line in lab:
             y.append(line[0:-1])
 

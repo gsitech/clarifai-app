@@ -7,8 +7,6 @@
     "margin": 0.05,
     "embedding_size": 512,
     "triplet_strategy": "batch_hard",
-    "squared": true,
-
-    "sprite_image_dim": 74
+    "squared": true
 
 }

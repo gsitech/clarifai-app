@@ -82,7 +82,7 @@ def query_CLARIFAI(CLARIFAI_API_KEY, cmd='2', query_image = None):
         if cmd == '3':
             query_image = input('Enter the name of your query image')    
 
-    with open('embeddings.txt', 'w') as emb, open('labels.txt', 'w') as lab, open('labels_strings.txt', 'w') as lab_s:
+    with open('../data/embeddings.txt', 'w') as emb, open('../data/labels.txt', 'w') as lab, open('../data/labels_strings.txt', 'w') as lab_s:
 
         if cmd == '1' or cmd == '2':
             response = app.inputs.get_all()

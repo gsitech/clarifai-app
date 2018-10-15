@@ -14,7 +14,7 @@ from my_model import sup
 parser = argparse.ArgumentParser()
 parser.add_argument('--model_dir', default='experiments/base_model',
                     help="Experiment directory containing params.json")
-parser.add_argument('--sprite_filename', default='experiments/clarifai_sprite.png',
+parser.add_argument('--sprite_filename', default='data/clarifai_sprite.png',
                     help="Sprite image for the projector")
 
 
