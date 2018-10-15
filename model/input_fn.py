@@ -1,17 +1,14 @@
-"""Create the input data pipeline using `tf.data`"""
+'''Functions to import data for training and testing'''
 
-#import model.mnist_dataset as mnist_dataset
-
+#TODO
+# Modify the file paths these functions once you have 
+# enough data to train and test separately
 
 def train_input_fn():
     """Training data supplier.
-
-    Args:
-        data_dir: (string) path to the data directory
-        params: (Params) contains hyperparameters of the model (ex: `params.num_epochs`)
     """
 
-    with open('model/embeddings.txt', 'r') as emb, open('model/labels.txt', 'r') as lab:
+    with open('utilities/embeddings.txt', 'r') as emb, open('utilities/labels.txt', 'r') as lab:
         x=[]
         y=[]
         for line in emb:
@@ -27,15 +24,10 @@ def train_input_fn():
 
 
 def test_input_fn():
-    """Test input function for the MNIST dataset.
-
-    Args:
-        data_dir: (string) path to the data directory
-        params: (Params) contains hyperparameters of the model (ex: `params.num_epochs`)
+    """Test input function.
     """
-    print("Test data generation")
 
-    with open('model/embeddings.txt', 'r') as emb, open('model/labels.txt', 'r') as lab:
+    with open('utilities/embeddings.txt', 'r') as emb, open('utilities/labels.txt', 'r') as lab:
         x=[]
         y=[]
         for line in emb:
@@ -48,4 +40,14 @@ def test_input_fn():
             y.append([int(line)])
 
     return x, y
+
+def get_labels_as_strings():
+    """Gets the string values of the labels
+    """
+    y=[]
+    with open('utilities/labels_strings.txt', 'r') as lab:
+        for line in lab:
+            y.append(line[0:-1])
+
+    return y
 

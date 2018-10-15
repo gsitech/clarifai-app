@@ -1,11 +1,13 @@
-from clarifai.rest import ClarifaiApp
-import os, requests, time, sys
+import os, requests, time, argparse
 from PIL import Image
 import matplotlib.pyplot as plt
+from model.utils import Params
 
+#TODO
+#Please compute the values for these variables
+#Based on ceil(sqrt(Test_Data_Size))
 ROWS = 15
 COLUMNS = 15
-PATH = '/home/shashankiyer/Clarifai/thumb'
 
 def check_if_image(img_path):
     '''Checks if the file is a valid image.
@@ -20,31 +22,41 @@ def check_if_image(img_path):
         print(img_path, "is not a valid image")
         return False
 
-def add_image_to_subplot(img_path, index, fig):
-    '''Adds an image to the subplot.
-       
-       :param img_path- A path to an image to add to the subplot
-       :param index- The index within the subplot to place the image
-       :param title- Title of the image
-       :param plot- Outer canvas
-    '''
-    disp_image = Image.open(img_path).convert('RGBA')
-    a = fig.add_subplot(ROWS, COLUMNS, index)
-    a.axis('off')
-    plt.imshow(disp_image, aspect='auto', interpolation='nearest')
+def add_image_to_canvas(im, image, counter_x, counter_y, img_dim):
+    image = Image.open(image, mode='r')
+    image = image.resize((img_dim,img_dim), Image.ANTIALIAS)
+    im.paste(image, box=(counter_x*img_dim,counter_y*img_dim), mask=None)
 
-fig=plt.figure(figsize=(30, 30))
+def cmp(a):
+    return int(a[3:].split('.')[0])
 
-counter = 0
+parser = argparse.ArgumentParser()
+parser.add_argument('image_dir',
+                    help="Directory containing the images to be used for the sprite")
+parser.add_argument('--sprite_save_dir', default='experiments/clarifai_sprite.png',
+                    help="Directory to save the sprite image")
+parser.add_argument('--model_dir', default='experiments/base_model',
+                    help="Experiment directory containing params.json")
 
-for image in os.listdir(PATH):
-    if  check_if_image(os.path.join(PATH,image)):
-        
-        counter+=1
-        
-        add_image_to_subplot(os.path.join(PATH,image), counter, fig)
-        
-plt.subplots_adjust(hspace=0, wspace=0)
-
-plt.savefig("clarifai_sprite.jpg", bbox_inches='tight', pad_inches=0)
-plt.show()
+if __name__ == '__main__':
+    # Load the parameters from json file
+    args = parser.parse_args()
+    json_path = os.path.join(args.model_dir, 'params.json')
+    assert os.path.isfile(json_path), "No json configuration file found at {}".format(json_path)
+    params = Params(json_path)
+    
+    #Create sprite
+    counter_x = 0
+    counter_y = 0
+    im = Image.new(mode='RGB', size = (15*params.sprite_image_dim,15*params.sprite_image_dim))
+    image_dir = sorted(os.listdir(args.image_dir), key=cmp)
+    for image in image_dir:
+        if  check_if_image(os.path.join(args.image_dir,image)):
+            add_image_to_canvas(im, os.path.join(args.image_dir,image), counter_x, counter_y, params.sprite_image_dim)
+            counter_x+=1
+            if counter_x%15 == 0:
+                counter_x=0
+                counter_y+=1
+            
+    im.show()
+    im.save(os.path.join(os.getcwd(),args.sprite_save_dir), format = 'PNG')

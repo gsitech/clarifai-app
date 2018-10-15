@@ -1,22 +1,14 @@
 {
-    "learning_rate": 1e-3,
-    "batch_size": 20,
-    "num_epochs": 5,
+    "learning_rate": 1e-2,
+    "batch_size": 25,
+    "num_epochs": 6,
     "model_file": "model",
 
-    "num_channels": 32,
-    "use_batch_norm": false,
-    "bn_momentum": 0.9,
-    "margin": 0.5,
+    "margin": 0.05,
     "embedding_size": 512,
     "triplet_strategy": "batch_hard",
-    "squared": false,
+    "squared": true,
 
-    "image_size": 28,
-    "num_labels": 10,
-    "train_size": 100,
-    "eval_size": 100,
+    "sprite_image_dim": 74
 
-    "num_parallel_calls": 4,
-    "save_summary_steps": 50
 }

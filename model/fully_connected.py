@@ -58,6 +58,7 @@ def __initialise_variables(MODEL_FILE):
 
     #placeholder initialiser
     x = tf.placeholder(tf.float32, [None, 1024], name = 'x')
+    
     out = x
     count = 1
     with open(MODEL_FILE, 'r') as f:

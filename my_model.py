@@ -41,20 +41,8 @@ def model_fn(params, mode):
 
     # -----------------------------------------------------------
     # METRICS AND SUMMARIES
-    # Metrics for evaluation using tf.metrics (average over whole dataset)
-    # TODO: some other metrics like rank-1 accuracy?
-    '''with tf.variable_scope("metrics"):
-        eval_metric_ops = {"embedding_mean_norm": tf.metrics.mean(embedding_mean_norm)}
 
-        if params.triplet_strategy == "batch_all":
-            eval_metric_ops['fraction_positive_triplets'] = tf.metrics.mean(fraction)
-
-    if mode == tf.estimator.ModeKeys.EVAL:
-        return tf.estimator.EstimatorSpec(mode, loss=loss, eval_metric_ops=eval_metric_ops)
-    '''
-
-    #Compute training accuracy
-
+    #Training accuracy
     og_emb_dist = tf.add((10*tf.eye(tf.shape(x)[0], dtype = tf.float32)), dist(x, squared=True))
     tr_emb_dist = tf.add((10*tf.eye(tf.shape(x)[0], dtype = tf.float32)), dist(embeddings, squared=True))
     
@@ -66,24 +54,17 @@ def model_fn(params, mode):
     accuracy = tf.reduce_mean(accuracy)
     tf.summary.scalar('accuracy', accuracy)
 
-    #Loss and accuracy for the enitre dataset
-    ls = loss
-    tf.summary.scalar('Training Loss on the entire dataset', ls)
-    ac = accuracy
-    tf.summary.scalar('Training Accuracy on the entire dataset', ac)
-
     # Summaries for training
     tf.summary.scalar('loss', loss)
     if params.triplet_strategy == "batch_all":
         tf.summary.scalar('fraction_positive_triplets', fraction)
 
-    # Define training step that minimizes the loss with the Adam optimizer
+    # Define training step that minimizes the loss with the Gradient Descent optimizer
     optimizer = tf.train.GradientDescentOptimizer(params.learning_rate)
     
-    #global_step = tf.train.get_global_step()
+    # Define variable that holds the value of the global step
     gst = tf.train.create_global_step()
     train_op = optimizer.minimize(loss, global_step=gst)
-    
 
     if mode == 'train':
         init = tf.global_variables_initializer()
@@ -95,13 +76,13 @@ def model_fn(params, mode):
                                       sess.graph)
         sess.run(init)
         
-        return x, labels, sess, train_op, accuracy, loss, merged, train_writer, gst, ls, ac
+        return x, labels, sess, train_op, accuracy, loss, merged, train_writer, gst
     elif mode == 'test':
-        return x, embeddings, labels#, accuracy
+        return x, embeddings, labels, accuracy
 
 
 def train(params):
-    x, labels, sess, train_op, accuracy, loss, merged, train_writer, gst, ls, ac = model_fn(params, mode='train')
+    x, labels, sess, train_op, accuracy, loss, merged, train_writer, gst = model_fn(params, mode='train')
 
     xdata, labeldata = train_input_fn()
 
@@ -125,35 +106,41 @@ def train(params):
             #print("Mini-batch training Accuracy", acc)
             #print("Mini-batch training Loss", lss)
 
-            acc, lss, merg, gg = sess.run([ac, ls, merged, gst], 
-                            feed_dict={ x: xdata, labels: labeldata })
-            #print("Training Accuracy over the entire set", acc)
-            #print("Training Loss over the entire set", lss)
-
         train_writer.add_summary(merg, global_step=gg)
-        #print("Average Training Accuracy= ", avg_acc * params.batch_size/len(xdata))
-        #print("Average Training Loss= ", avg_lss * params.batch_size/len(xdata))
-        #print('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+        print("Average Training Accuracy= ", avg_acc * params.batch_size/len(xdata))
+        print("Average Training Loss= ", avg_lss * params.batch_size/len(xdata))
+        print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         
     train_time=time.time() - start_time
     
     saver= tf.train.Saver()
-    saver.save(sess , os.path.join(os.getcwd(), params.model_file), global_step=gg)
+    saver.save(sess , os.path.join(os.getcwd(), params.model_file))
     
     print("Total training time= ", train_time, "seconds")
 
 def test(params):
-    x, embeddings, labels = model_fn(params, mode = 'test')
+    x, embeddings, labels, accuracy = model_fn(params, mode = 'test')
 
-    xdata, labeldata = test_input_fn()
-    
     sess = tf.Session()
-    tf.train.Saver().restore(sess , os.path.join(os.getcwd(), params.model_file))
-    print ("Model restored!")
-    #start_time=time.time()
-    out= sess.run(embeddings, feed_dict={x:xdata, labels: labeldata})
+    try:
+        tf.train.Saver().restore(sess , os.path.join(os.getcwd(), params.model_file))
+    except:
+        print("Please create a model before using it for prediction")
+        print("Run the following command-> python my_model.py train")
+        exit(1)
+    
+    xdata, labeldata = test_input_fn()
 
-    return out, sess
+    print ("Model restored!")
+
+    start_time=time.time()
+    out, acc= sess.run([embeddings, accuracy], feed_dict={x:xdata, labels: labeldata})
+    test_time=time.time() - start_time
+    print("Time taken for prediction= ", test_time, "seconds")
+
+    print("Prediction accuracy", acc)
+
+    return out
 
 
 parser = argparse.ArgumentParser()
@@ -164,8 +151,6 @@ parser.add_argument('mode', default='test',
 
 
 if __name__ == '__main__':
-    #tf.reset_default_graph()
-    #tf.logging.set_verbosity(tf.logging.INFO)
 
     # Load the parameters from json file
     args = parser.parse_args()
