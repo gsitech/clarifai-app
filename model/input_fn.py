@@ -8,7 +8,7 @@ def train_input_fn():
     """Training data supplier.
     """
 
-    with open('../data/embeddings.txt', 'r') as emb, open('../data/labels.txt', 'r') as lab:
+    with open('data/embeddings.txt', 'r') as emb, open('data/labels.txt', 'r') as lab:
         x=[]
         y=[]
         for line in emb:
@@ -27,7 +27,7 @@ def test_input_fn():
     """Test input function.
     """
 
-    with open('../data/embeddings.txt', 'r') as emb, open('../data/labels.txt', 'r') as lab:
+    with open('data/embeddings.txt', 'r') as emb, open('data/labels.txt', 'r') as lab:
         x=[]
         y=[]
         for line in emb:
@@ -45,7 +45,7 @@ def get_labels_as_strings():
     """Gets the string values of the labels
     """
     y=[]
-    with open('../data/labels_strings.txt', 'r') as lab:
+    with open('data/labels_strings.txt', 'r') as lab:
         for line in lab:
             y.append(line[0:-1])
 
