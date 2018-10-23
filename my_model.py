@@ -59,6 +59,10 @@ def model_fn(params, mode):
     if params.triplet_strategy == "batch_all":
         tf.summary.scalar('fraction_positive_triplets', fraction)
 
+    #Define Accuracy
+    accuracy = dcg_accuracy(x, embeddings, params)
+    tf.summary.scalar('DCG Accuracy', accuracy)
+
     # Define training step that minimizes the loss with the Gradient Descent optimizer
     optimizer = tf.train.GradientDescentOptimizer(params.learning_rate)
     
@@ -107,8 +111,11 @@ def train(params):
             #print("Mini-batch training Loss", lss)
 
         train_writer.add_summary(merg, global_step=gg)
-        print("Average Training Accuracy= ", avg_acc * params.batch_size/len(xdata))
-        print("Average Training Loss= ", avg_lss * params.batch_size/len(xdata))
+
+                            
+        print("Average Training DCG Accuracy= ", avg_acc / math.ceil(len(xdata) / params.batch_size))
+        print("Average Training Triplet Loss= ", avg_lss / math.ceil(len(xdata) / params.batch_size))
+
         print("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         
     train_time=time.time() - start_time
