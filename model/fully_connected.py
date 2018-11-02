@@ -17,37 +17,6 @@ def hashing_model():
     
     return __initialise_variables(MODEL_FILE)
 
-
-
-def __dense_layer(x, W, b):
-    '''Creates a fully connected layer
-
-        :param x- input to the layer
-        :param W- weights of the current layer
-        :param b- biases of the current layer
-    '''
-    x= tf.add(tf.matmul(x,W),b)
-
-    return tf.nn.relu(x)
-
-def __weights_biases(index, prev_features, features):
-    '''Creates weights and biases for a layer
-
-        :param index- (for simplified debugging only)
-        :param prev_features- features of the layer connected as input to the
-                                current layer
-        :param features- features of the current layer
-
-        :return- created weights and biases
-    '''
-    index_w = 'W'+str(index)
-    index_b = 'b'+str(index)
-
-    W = tf.get_variable(index_w, [prev_features, features], dtype=tf.float32 ,initializer= tf.contrib.layers.xavier_initializer())
-    b = tf.get_variable(index_b, [features], dtype=tf.float32, initializer= tf.contrib.layers.xavier_initializer())
-    return W, b
-
-
 def __initialise_variables(MODEL_FILE):
     '''Creates a neural network that reduces the dimensionality of
         the representation space.
@@ -61,13 +30,22 @@ def __initialise_variables(MODEL_FILE):
     
     out = x
     count = 1
+    dense_layers = []
     with open(MODEL_FILE, 'r') as f:
         ff = f.readlines()
-        prev_features = 1024
         for line in ff:
-            W, b = __weights_biases(count, prev_features, int(line))
-            out = __dense_layer(out, W, b)
+            out = tf.layers.dense(out, int(line), activation=tf.nn.relu, name='dense'+str(count))
+            dense_layers.append(out)
             count+=1
             prev_features = int(line)
 
-    return x, out
+    out1 = tf.layers.dense(out, prev_features, activation=tf.nn.sigmoid, name='bitvectors'+str(count))
+    dense_layers.append(out1)
+    outt = tf.round(out1)
+    dense_layers.append(outt)
+
+    count+=1
+
+    ls = tf.layers.dense(outt, prev_features, activation=tf.nn.sigmoid, name='lss'+str(count))
+
+    return x, outt, ls
